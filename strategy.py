@@ -91,49 +91,9 @@ class EGreedyLinearStrategy():
         return action
 
 
-class EGreedyLinearStrategy():
-    """
-    입실론 그리디 exp 감소 전략
-    """
-    def __init__(self, init_epsilon=1.0, min_epsilon=0.1, decay_steps=20000):
-        self.t = 0
-        self.epsilon = init_epsilon
-        self.init_epsilon = init_epsilon
-        self.min_epsilon = min_epsilon
-        self.decay_steps = decay_steps
-        self.exploratory_action_taken = None
-        
-    def _epsilon_update(self):
-        epsilon = 1 - self.t / self.decay_steps
-        epsilon = (self.init_epsilon - self.min_epsilon) * epsilon + self.min_epsilon
-        epsilon = np.clip(epsilon, self.min_epsilon, self.init_epsilon)
-        self.t += 1
-        return epsilon
-
-    def select_action(self, model, state, battery, battery_max):
-        #self.exploratory_action_taken = False
-        with torch.no_grad():
-            q_values = model(state).cpu().detach()
-
-        q_list ,idx = [], []
-        for i in range(0,21,1):
-            if battery + i>= 0 and battery + i <= battery_max:
-                q_list.append(q_values[i].item())
-                idx.append(i)
-            else: q_list.append(np.float('inf'))
-
-        if np.random.rand() >= self.epsilon:
-            action = q_list.index(min(q_list))
-        else: 
-            action = np.random.choice(idx)
-
-        self.epsilon = self._epsilon_update()
-        #self.exploratory_action_taken = action != np.argmax(q_values)
-        return action
-
 class EGreedyExpStrategy():
     """
-    소프트맥스 전략
+    입실론 그리디 exp 감소 전략
     """
     def __init__(self, init_epsilon=1.0, min_epsilon=0.1, decay_steps=20000):
         self.epsilon = init_epsilon
@@ -172,6 +132,9 @@ class EGreedyExpStrategy():
         return action
 
 class SoftMaxStrategy():
+    """
+    소프트맥스 전략
+    """
     def __init__(self, 
                  init_temp=1.0, 
                  min_temp=0.01, 
