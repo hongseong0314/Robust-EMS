@@ -50,8 +50,9 @@ def trainer(f_load, f_generation, start_day, end_day, iteration, feature,
     epochs = days * iteration #무조건 days의 배수, 아니면 그래프 오류발생
     
     # init state
-    state = initialize_state(feature, summer_TOU, T, load_data, generation_data, Tf, start_day, summer_TOU, winter_TOU)
+    state = initialize_state(feature, T, load_data, generation_data, Tf, start_day, summer_TOU, winter_TOU)
     
+    # DQN 모델 선택
     if coder == 'DQN':
         # 학습 함수들
         value_model_fn = lambda Feature: Qnet(Feature)
@@ -79,7 +80,28 @@ def trainer(f_load, f_generation, start_day, end_day, iteration, feature,
                                                                     days=days, T=T, start_size=start_size,
                                                                     freq=freq, init_state=state,
                                                                     )
+                                                                    # model save
+        create_directory("weight")                
+        online_model_name = "weight/q_{}_{}_{}.pth".format(agent.__class__.__name__, training_strategy_fn().__class__.__name__, batch_size)
+        torch.save(agent.online_model.state_dict(), online_model_name)
+
+        # result save
+        create_directory("history")
+        history = {
+            "cost":cost_history,
+            "action":action_history,
+            "battery":battery_history,
+        }
+        # 학습 결과 저장 이름 : result_modelname_stategy_batchsize
+        history_path = 'history/result_{}_{}_{}.pkl'.format(agent.__class__.__name__, training_strategy_fn().__class__.__name__, 
+                                                            batch_size)
+        with open(history_path,'wb') as f:
+            pickle.dump(history,f)
+
+        
+        title = '{}_{}_{}'.format(agent.__class__.__name__, training_strategy_fn().__class__.__name__, batch_size)
     
+    # DDQN 모델 사용
     elif coder == 'DDQN':
         # 학습 함수들
         value_model_fn = lambda Feature: Qnet(Feature)
@@ -103,11 +125,12 @@ def trainer(f_load, f_generation, start_day, end_day, iteration, feature,
         # 학습 시작
         cost_history, action_history, battery_history = agent.train(feature=feature, epochs=epochs, start_day=start_day, end_day=end_day, 
                                                                     summer_TOU=summer_TOU, Tf=Tf,pD=pD,
-                                                                    load_data=load_data, generation_data=generation_data, 
+                                                                   load_data=load_data, generation_data=generation_data, 
                                                                     days=days, T=T, start_size=start_size,
                                                                     freq=freq, init_state=state,
                                                                     )
 
+    # DualingDDQN 사용
     elif coder == 'dualingDDQN':
         # 학습 함수들
         value_model_fn = lambda Feature: DualingQnet(Feature)
@@ -136,7 +159,28 @@ def trainer(f_load, f_generation, start_day, end_day, iteration, feature,
                                                                     days=days, T=T, start_size=start_size,
                                                                     freq=freq, init_state=state,
                                                                     )
+        create_directory("weight")                
+        online_model_name = "weight/q_{}_{}_{}.pth".format(agent.__class__.__name__, training_strategy_fn().__class__.__name__, batch_size)
+        torch.save(agent.online_model.state_dict(), online_model_name)
 
+        # result save
+        create_directory("history")
+        history = {
+            "cost":cost_history,
+            "action":action_history,
+            "battery":battery_history,
+        }
+        # 학습 결과 저장 이름 : result_modelname_stategy_batchsize
+        history_path = 'history/result_{}_{}_{}.pkl'.format(agent.__class__.__name__, training_strategy_fn().__class__.__name__, 
+                                                            batch_size)
+        with open(history_path,'wb') as f:
+            pickle.dump(history,f)
+
+        
+        title = '{}_{}_{}'.format(agent.__class__.__name__, training_strategy_fn().__class__.__name__, batch_size)
+        
+
+    # PER 모델 사용
     elif coder == 'PER':
         value_model_fn = lambda Feature: DualingQnet(Feature)
         value_optimizer_fn = lambda net, lr: optim.Adam(net.parameters(), lr=lr)
@@ -170,6 +214,28 @@ def trainer(f_load, f_generation, start_day, end_day, iteration, feature,
                                                                     freq=freq, init_state=state,
                                                                     )
 
+        create_directory("weight")                
+        online_model_name = "weight/q_{}_{}_{}.pth".format(agent.__class__.__name__, training_strategy_fn().__class__.__name__, batch_size)
+        torch.save(agent.online_model.state_dict(), online_model_name)
+
+        # result save
+        create_directory("history")
+        history = {
+            "cost":cost_history,
+            "action":action_history,
+            "battery":battery_history,
+        }
+        # 학습 결과 저장 이름 : result_modelname_stategy_batchsize
+        history_path = 'history/result_{}_{}_{}.pkl'.format(agent.__class__.__name__, training_strategy_fn().__class__.__name__, 
+                                                            batch_size)
+        with open(history_path,'wb') as f:
+            pickle.dump(history,f)
+
+        
+        title = '{}_{}_{}'.format(agent.__class__.__name__, training_strategy_fn().__class__.__name__, batch_size)
+        
+
+    # 엑터-크리틱 모델
     elif coder == 'AC':
         from AC import FCDAP, FCV, VPG
 
@@ -183,49 +249,56 @@ def trainer(f_load, f_generation, start_day, end_day, iteration, feature,
         value_optimizer_fn = lambda net, lr: optim.RMSprop(net.parameters(), lr=lr)
         value_optimizer_lr = 0.0007
 
-        tau = 0.1
         max_gradient_norm = float('inf')
+        entropy_loss_weight = 0.001
 
-        agent = VPG(replay_buffer_fn=replay_buffer_fn,
+        # env
+        from env import Environment
+        make_env_fn = lambda feature, load_data, generation_data, days, T, pD: Environment(feature,
+                                                                                            load_data, 
+                                                                                            generation_data,
+                                                                                            days, 
+                                                                                            T, pD)
+
+        agent = VPG(policy_model_fn=policy_model_fn,
+                    policy_model_max_grad_norm=policy_model_max_grad_norm,
+                    policy_optimizer_fn=policy_optimizer_fn,
+                    policy_optimizer_lr = policy_optimizer_lr,
                     value_model_fn=value_model_fn,
-                    value_optimizer_fn=value_optimizer_fn,
-                    value_optimizer_lr=value_optimizer_lr,
-                    max_gradient_norm = max_gradient_norm,
-                    training_strategy_fn=training_strategy_fn,
-                    cal_price = cal_price,
-                    next_state = next_state,
-                    batch_size=batch_size,
-                    gamma=gamma,
+                    value_model_max_grad_norm = value_model_max_grad_norm,
+                    value_optimizer_fn = value_optimizer_fn,
+                    value_optimizer_lr = value_optimizer_lr,
+                    entropy_loss_weight = entropy_loss_weight,
                     battery_max=battery_max,
-                    tau=tau)
+                    )
         
         # 학습 시작
-        cost_history, action_history, battery_history = agent.train(feature=feature, epochs=epochs, start_day=start_day, end_day=end_day, 
-                                                                    summer_TOU=summer_TOU, Tf=Tf,pD=pD,
+        cost_history, action_history, battery_history = agent.train(make_env_fn = make_env_fn, feature=feature, epochs=epochs, start_day=start_day, end_day=end_day, 
+                                                                    Tf=Tf,pD=pD, summer_TOU=summer_TOU, winter_TOU=winter_TOU,
                                                                     load_data=load_data, generation_data=generation_data, 
-                                                                    days=days, T=T, start_size=start_size,
-                                                                    freq=freq, init_state=state,
+                                                                    days=days, T=T,
+                                                                    gamma= gamma,
                                                                     )
-    # model save
-    create_directory("weight")                
-    online_model_name = "weight/q_{}_{}_{}.pth".format(agent.__class__.__name__, training_strategy_fn().__class__.__name__, batch_size)
-    torch.save(agent.online_model.state_dict(), online_model_name)
-    
-    # result save
-    create_directory("history")
-    history = {
-        "cost":cost_history,
-        "action":action_history,
-        "battery":battery_history,
-    }
-    # 학습 결과 저장 이름 : result_modelname_stategy_batchsize
-    history_path = 'history/result_{}_{}_{}.pkl'.format(agent.__class__.__name__, training_strategy_fn().__class__.__name__, 
-                                                        batch_size)
-    with open(history_path,'wb') as f:
-        pickle.dump(history,f)
+        create_directory("weight")                
+        policy_model_name = "weight/q_{}.pth".format(agent.__class__.__name__)
+        torch.save(agent.policy_model.state_dict(), policy_model_name)
 
+        # result save
+        create_directory("history")
+        history = {
+            "cost":cost_history,
+            "action":action_history,
+            "battery":battery_history,
+        }
+        # 학습 결과 저장 이름 : result_modelname_stategy_batchsize
+        history_path = 'history/result_{}.pkl'.format(agent.__class__.__name__)
+        with open(history_path,'wb') as f:
+            pickle.dump(history,f)
+
+        
+        title = '{}'.format(agent.__class__.__name__)
+        
     
-    title = '{}_{}_{}'.format(agent.__class__.__name__, training_strategy_fn().__class__.__name__, batch_size)
     
     # 그래프 출력
     if verbose:
@@ -245,7 +318,7 @@ def tester(f_load, f_generation, pos_name,
     # load, generation 데이터 형성
     load_data, generation_data = load_and_generte(f_load, f_generation, pos_name, start_day, end_day)
 
-    result_cost_history, result_battery_history,result_action_history = [],[],[]
+    result_cost_history, result_battery_history, result_action_history = [],[],[]
 
     def get_model(model, m=MPG, pretrained=False):
         # multi-GPU일 경우, Data Parallelism

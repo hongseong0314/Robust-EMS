@@ -37,7 +37,7 @@ Tf= 0 #미래 지수?
 feature = 52 + 2*Tf # 52 + Tf*2
 battery_max = 40 # 배터리 용량 
 freq = 20 # target 모델 업데이트 폭
-iteration = 5000 # 반복
+iteration = 50 # 반복
 pD=30 # ??
 
 # 탐색 전략
@@ -82,13 +82,13 @@ config = {
     'pD':pD, 
     'gamma':gamma,
     'freq':freq,
-    'coder':'PER',
+    'coder':'AC',
     'verbose':True,
 }
 
-st_list = [bb, cc] # bb, cc
+st_list = [bb] # bb, cc
 batch_list = [128]
-model_name = ['DQN', 'DDQN', 'dualingDDQN', 'PER']
+model_name = ['AC']
 
 def run(cfg_dict):
     # hyper search 
