@@ -220,7 +220,7 @@ def train(memory, q_target, q, optimizer, batch_size, battery_max, gamma, Tf):
     loss.backward()
     optimizer.step()
 
-def initialize_state(feature, TOU, T, load_data, generation_data, Tf, start_day, summer_TOU, winter_TOU):
+def initialize_state(feature, T, load_data, generation_data, Tf, start_day, summer_TOU, winter_TOU):
     state = np.zeros(feature)
     if start_day % 365 < 90 or start_day % 365 >= 273: TOU = winter_TOU
     else: TOU = summer_TOU
@@ -313,7 +313,7 @@ def name_check(coder):
     """
     model 이름 체크
     """
-    if coder in ['DQN', 'dqn', 'DDQN', 'ddqn', 'DualingDQN', 'dualingdqn', 'DualingDDQN', 'dualingDDQN', 'PER']:
+    if coder in ['DQN', 'dqn', 'DDQN', 'ddqn', 'DualingDQN', 'dualingdqn', 'DualingDDQN', 'dualingDDQN', 'PER', 'AC']:
         return False
     else: return True
 
@@ -348,3 +348,35 @@ def load_and_generte(load_df, sun_df, pos, start_day, end_day):
     del Big_df, sub_df, load_pivot
     
     return load_data, generation_data
+
+def charge_graph(load_data, generation_data, TOU, action_history, battery_history, path):
+    fig, ax = plt.subplots(2, 2, figsize=(2*7, 2*5))
+    for iters, i in enumerate(range(4)):
+        row = iters // 2
+        col = iters % 2
+        x = range(0, 24)
+        y1 = [v for v in load_data[i]]
+        y2 = [v for v in action_history[i]]
+        y3 = [v for v in TOU[0:24]]
+        y4 = [v for v in battery_history[i]]
+        y5 = [v for v in generation_data[i]]
+
+        ax[row, col].plot(x, y3, label='TOU', color='gray')
+        ax[row, col].fill_between(x[0:24], y3[0:24], color='lightgray')
+
+        #plt.plot(x, y4, linewidth=3, label='HM_charge', color='Red')
+        ax[row, col].plot(x, y2, linewidth=3 ,label='DQL', color='Orange')
+        #plt.plot(x, y5, linewidth=3 ,label='Optimal', color='orange')
+
+        ax[row, col].plot(x, y5, '--',label='Generation',color='gray')
+        ax[row, col].plot(x, y1,'-', label='Load', color='black')
+
+        ax[row, col].set(title='{} Day sample'.format(i+1),
+                         ylabel='Charge', xlabel='Time',
+                        xticks=np.arange(0, 24), yticks=[0,2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,32,34,36,38,40]) 
+        ax[row, col].legend(loc='best')
+        ax[row, col].grid(True)
+
+    fig.suptitle('_'.join(path.split("_")[1:3]),fontweight ="bold")
+    fig.tight_layout()
+    plt.show()
