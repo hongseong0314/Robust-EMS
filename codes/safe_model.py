@@ -154,7 +154,7 @@ class SDQN():
 
         self.model_ensemble = BatchedGaussianEnsemble(self.model_cfg, self.feature, 1)
         self.fraction = 0.3
-        self.stepper = self.setp_run()
+        self.stepper = self.step_run()
         self.epochs_completed = 0
         self.step_count = 0
         self.model_update_period = 24 * 5
@@ -204,7 +204,7 @@ class SDQN():
         if self.epochs_completed % self.freq == 0 and self.epochs_completed != 0:
             self.update_network()
     
-    def setp_run(self):
+    def step_run(self):
         state = self.env.initialize_state(self.start_day)
         while(True):
             battery = state[0] - state[50] + state[51+self.Tf]
@@ -459,7 +459,7 @@ class ESDQN():
         self.training_strategy = self.training_strategy_fn()
 
         self.fraction = 0.2
-        self.stepper = self.setp_run()
+        self.stepper = self.step_run()
         self.epochs_completed = 0
         self.step_count = 0
         self.model_update_period = 24
@@ -509,7 +509,7 @@ class ESDQN():
         if self.epochs_completed % self.freq == 0 and self.epochs_completed != 0:
             self.update_network()
     
-    def setp_run(self):
+    def step_run(self):
         state = self.env.initialize_state(self.start_day)
         while(True):
             battery = state[0] - state[50] + state[51+self.Tf]
@@ -743,7 +743,7 @@ class MSDQN():
 
         self.model_ensemble = BatchedGaussianEnsemble(self.model_cfg, self.feature, 1)
         self.fraction = 0.1
-        self.stepper = self.setp_run()
+        self.stepper = self.step_run()
         self.epochs_completed = 0
         self.step_count = 0
         self.model_update_period = 24 * 50
@@ -792,7 +792,7 @@ class MSDQN():
         if self.epochs_completed % self.freq == 0 and self.epochs_completed != 0:
             self.update_network()
     
-    def setp_run(self):
+    def step_run(self):
         state = self.env.initialize_state(self.start_day)
         while(True):
             battery = state[0] - state[50] + state[51+self.Tf]
