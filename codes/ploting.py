@@ -69,28 +69,47 @@ def charge_graph(load_data, generation_data, TOU, action_history, battery_histor
     plt.show()
 
 def violation_accumulation(model_list):
-    colors = dict(mcolors.BASE_COLORS, **mcolors.CSS4_COLORS)
-    ran_color = np.random.choice(list(colors.keys()), size=len(model_list))
+    # colors = dict(mcolors.BASE_COLORS, **mcolors.CSS4_COLORS)
+    # ran_color = np.random.choice(list(colors.keys()), size=len(model_list))
+    ran_color = ["b", "g", "m", "r"]
+    # markers = [".", "o", "v", "s", "*"]
+    # lines = ["-", "--", ":", "-", "--"]
+    linestyle_tuple = [
+    ('dotted',                (0, (1, 1))),
+
+    # ('loosely dashed',        (0, (5, 10))),
+    ('densely dashed',        (0, (5, 1))),
+
+    ('dashdotted',            (0, (3, 5, 1, 5))),
+
+    ("solid", "solid"),]
 
     with plt.style.context('ggplot'):
-        plt.figure(figsize=(8,6))
-        for model_name, cor in zip(model_list, ran_color):
+        plt.figure(figsize=(17,12))
+        for model_name, cor, (line_name, line_s) in zip(model_list, ran_color, linestyle_tuple):
             path = glob('history/violation/' + model_name + '/*.pkl')
 
-            violation_history = [pickle.load(open(pt, 'rb'))['violation'] for pt in path]
+            if len(path) == 1:
+                violation_history = pickle.load(open(path[0], 'rb'))['violation']
+                plt.plot(violation_history, label=f'{model_name}', linewidth=7, color=cor, linestyle=line_s)
+            
+            else:
+                violation_history = [pickle.load(open(pt, 'rb'))['violation'] for pt in path]
 
-            min_ = np.min(violation_history, axis=0)
-            max_ = np.max(violation_history, axis=0)
-            mean_ = np.mean(violation_history, axis=0)
+                min_ = np.min(violation_history, axis=0)
+                max_ = np.max(violation_history, axis=0)
+                mean_ = np.mean(violation_history, axis=0)
 
-            plt.plot(min_, linewidth=1, color=cor)
-            plt.plot(max_, linewidth=1, color=cor)
-            plt.plot(mean_, label=f'{model_name} violation aumm', linewidth=2, color=cor, linestyle=":")
-            plt.fill_between(range(len(mean_)) , min_, max_, facecolor=cor, alpha=0.3)
-        plt.legend()
-        plt.xlabel("epoch")
-        plt.ylabel("count")
-        plt.title("Violation accumulation", fontsize=20)
+                plt.plot(min_, linewidth=4, color=cor)
+                plt.plot(max_, linewidth=4, color=cor)
+                plt.plot(mean_, label=f'{model_name}', linewidth=7, color=cor, linestyle=line_s)
+                plt.fill_between(range(len(mean_)) , min_, max_, facecolor=cor, alpha=0.3)
+        plt.legend(loc='best', fontsize=30)
+        plt.xlabel("Episode", fontsize=40)
+        plt.ylabel("Count", fontsize=40)
+        plt.xticks(fontsize=30)
+        plt.yticks(fontsize=30)
+        # plt.title("Violation accumulation", fontsize=20)
         plt.show()
-    del colors, ran_color, min_, max_, mean_
+    del ran_color
     pass

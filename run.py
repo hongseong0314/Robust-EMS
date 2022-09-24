@@ -14,7 +14,7 @@ import os
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 # 입실론 그리디
-aa = lambda : EGreedyStrategy(epsilon=0.01)
+aa = lambda : EGreedyStrategy(epsilon=0.001)
 
 # 입실론 그리디 선형 감소
 bb = lambda: EGreedyLinearStrategy(init_epsilon=1.0,
@@ -62,9 +62,3 @@ def run():
 if __name__ == '__main__':
     print("train start.........")
     run()
-
-
-
-
-
-

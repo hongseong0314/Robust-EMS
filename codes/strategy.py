@@ -36,11 +36,11 @@ class EGreedyStrategy():
 
         q_list ,idx = [], []
         for i in range(0,21,1):
-            if battery + i>= 0 and battery + i <= battery_max :
+            if battery + i>= 0 and battery + i <= battery_max and i <= market_limit:
                 q_list.append(q_values[i].item())
                 idx.append(i)
-            else: q_list.append(np.float('inf')) #np.float('inf')
-        # 입실론 그리디??탐색 
+            else: q_list.append(np.float('inf')) 
+
         if len(idx) == 0:
             action = 0
 
@@ -49,33 +49,6 @@ class EGreedyStrategy():
                 action = q_list.index(min(q_list))
             else: 
                 action = np.random.choice(idx)
-
-        #self.exploratory_action_taken = action != np.argmax(q_values)
-        return action
-
-class EGreedyStrategy_vi():
-    """
-    입실론 그리디 전략
-    """
-    def __init__(self, epsilon=0.1):
-        self.epsilon = epsilon
-        self.exploratory_action_taken = None
-
-    def select_action(self, model, state, battery, battery_max):
-        #self.exploratory_action_taken = False
-        with torch.no_grad():
-            q_values = model(state).cpu().detach()
-
-        q_list = [q_values[i].item() for i in range(0,21,1)]
-        # for i in range(0,21,1):
-        #     q_list.append(q_values[i].item())
-        #     idx.append(i)
-        # print("idx", idx)
-        # 입실론 그리디??탐색 
-        if np.random.rand() >= self.epsilon:
-            action = q_list.index(min(q_list))
-        else: 
-            action = np.random.choice(range(0,21,1))
 
         #self.exploratory_action_taken = action != np.argmax(q_values)
         return action
@@ -137,7 +110,7 @@ class EGreedyLinearStrategy():
 
         q_list ,idx = [], []
         for i in range(0,21,1):
-            if battery + i>= 0 and battery + i <= battery_max:
+            if battery + i>= 0 and battery + i <= battery_max and i <= market_limit:
                 q_list.append(q_values[i].item())
                 idx.append(i)
             else: q_list.append(np.float('inf'))
