@@ -5,7 +5,7 @@ import numpy as np
 from tqdm import trange
 
 from codes.utills import over_flow_battery, over_flow_battery_max, over_flow_battery_3000, target_scale
-from codes.buffer import ReplayBuffer_vi
+from codes.buffer import ReplayBuffer_vi, ReplayBuffer_vi_day, ReplayBuffer_vi_market
 from codes.real_dynamics import T_hat
 from src.dynamics import BatchedGaussianEnsemble
 
@@ -325,7 +325,7 @@ class ESDQN():
                 start_size,
                 freq,
                 violation,
-                obs = 0,
+                obs = 1,
                  ):
         """
         replay_buffer_fn,
@@ -379,30 +379,32 @@ class ESDQN():
 
         self.rollout_batch_size = 100
         self.horizon = 5
-        self.q = 0.09
-        self.p = 0.9
+        self.q = 0.01
+        self.p = 0.1
 
     def optimize_model(self):
         """
         online 신경망 학습
         """
         n_real = int(self.fraction * self.batch_size)
-        real_samples = self.replay_buffer.sample(n_real)[:-1]
+        real_samples = self.replay_buffer.sample(n_real)
         virt_samples = self.virt_buffer.sample(self.batch_size - n_real)
         
         combined_samples = [
             torch.cat([real, virt]) for real, virt in zip(real_samples, virt_samples)
         ]
 
-        s, a, r, s_prime, vi = combined_samples
+        s, a, r, s_prime, vi, day = combined_samples
+        time = np.argmax(s[:, 2:26], axis=1)
+
         q_a = self.online_model(s).gather(1,a)
 
         # target 신경망
         min_q_prime = self.target_model(s_prime).detach()
         #min_q_prime = target_scale(min_q_prime)
-        Q_target = over_flow_battery_3000(self.batch_size, self.battery_max, s_prime, min_q_prime, self.Tf).min(1)[0]
+        Q_target = over_flow_battery(self.batch_size, self.battery_max, s_prime, min_q_prime, self.Tf, day, time, self.env.market_limit).min(1)[0]
         Q_target = torch.tensor((Q_target)).resize(self.batch_size, 1)
-        # print("Q : ",Q_target)
+        print("Q : ",Q_target)
 
         # r + discount * max(q)
         target = r + self.gamma * Q_target
@@ -448,7 +450,7 @@ class ESDQN():
                                                        self.value_optimizer_lr)
 
         self.replay_buffer = self.replay_buffer_fn()
-        self.virt_buffer = ReplayBuffer_vi(15000, batch_size=self.batch_size)
+        self.virt_buffer = ReplayBuffer_vi_day(15000, batch_size=self.batch_size)
         self.training_strategy = self.training_strategy_fn()
 
         self.fraction = 0.2
@@ -498,9 +500,9 @@ class ESDQN():
             self.update_network()
         
         
-        if self.epochs_completed >= 15000:
-            online_model_name = "Tf0/{}.pth".format(self.epochs_completed)
-            torch.save(self.online_model.state_dict(), online_model_name)
+        # if self.epochs_completed >= 15000:
+        #     online_model_name = "Tf0/{}.pth".format(self.epochs_completed)
+        #     torch.save(self.online_model.state_dict(), online_model_name)
     
     def setp_run(self):
         state = self.env.initialize_state(self.start_day)
@@ -550,7 +552,7 @@ class ESDQN():
         #self.replay_buffer.ss_mem[:self.replay_buffer.size]
         buffer = ReplayBuffer_vi(self.rollout_batch_size * self.horizon, batch_size=self.batch_size)
         states = np.vstack(self.replay_buffer.ss_mem[idxs]).astype(np.float32)
-        ep = self.replay_buffer.e_mem[idxs].astype(np.int64)
+        ep = self.replay_buffer.day_mem[idxs].astype(np.int64)
         ob_time = np.argmax(states[:, 2:26], axis=1)
 
         for obs_iter, t in enumerate(range(self.horizon)):
@@ -566,9 +568,9 @@ class ESDQN():
 
             violations = self.env.check_violation(next_states, actions.squeeze(-1), ob_time)
             
-            for s,a,r,s_,vi in zip(states, actions.squeeze(-1), rewards, next_states, violations):
+            for s,a,r,s_,vi, d in zip(states, actions.squeeze(-1), rewards, next_states, violations, ep):
                 buffer.put((s, a, r, s_, vi))
-                self.virt_buffer.put((s, a, r, s_, vi))
+                self.virt_buffer.put((s, a, r, s_, vi, d))
             
             logic = np.logical_or((ob_time+1 > 23), (ep+1 >= self.days))
             continues = ~(violations | logic) #| (ep+1) >= self.days

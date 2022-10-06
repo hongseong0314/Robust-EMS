@@ -111,7 +111,7 @@ def next_state(n_epi,time,battery,charge,day_charge,TOU,load_data,generation_dat
 
     return state_prime
 
-def over_flow_battery(batch_size, battery_max, s_prime, min_q, Tf):
+def over_flow_battery(batch_size, battery_max, s_prime, min_q, Tf, day, time, market_limit):
     """
     모델 output에 배터리 맥스 넘는지 체크
     """
@@ -122,7 +122,7 @@ def over_flow_battery(batch_size, battery_max, s_prime, min_q, Tf):
         if battery > battery_max: battery = battery_max
 
         for j in range(0, 21, 1):
-            if battery + j >= 0 and battery + j <= battery_max:
+            if battery + j >= 0 and battery + j <= battery_max and j <= market_limit[(day[i] + 1)%30][(time[i] + 1)%24]:
                 pass
             else:
                 min_q[i, j] = np.float('inf')

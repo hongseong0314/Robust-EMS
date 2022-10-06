@@ -120,7 +120,8 @@ class ReplayBuffer_vi():
     def __len__(self):
         return self.size
 
-class ReplayBuffer_vi_e():
+
+class ReplayBuffer_vi_day():
     """
     경험 재현 버퍼 list 버전
     """
@@ -132,8 +133,7 @@ class ReplayBuffer_vi_e():
         self.rs_mem = np.empty(shape=(buffer_limit), dtype=np.ndarray)
         self.ps_mem = np.empty(shape=(buffer_limit), dtype=np.ndarray)
         self.vi_mem = np.empty(shape=(buffer_limit), dtype=np.ndarray)
-        self.e_mem = np.empty(shape=(buffer_limit), dtype=np.ndarray)
-        #self.ds_mem = np.empty(shape=(buffer_limit), dtype=np.ndarray)
+        self.day_mem = np.empty(shape=(buffer_limit), dtype=np.ndarray)
 
         self.max_size = buffer_limit
         self.batch_size = batch_size
@@ -141,13 +141,14 @@ class ReplayBuffer_vi_e():
         self.size = 0
     
     def put(self, sample):
-        s, a, r, p, vi, e = sample
+        s, a, r, p, vi, day = sample
         self.ss_mem[self._idx] = s
         self.as_mem[self._idx] = a
         self.rs_mem[self._idx] = r
         self.ps_mem[self._idx] = p
         self.vi_mem[self._idx] = vi
-        self.e_mem[self._idx] = e
+        self.day_mem[self._idx] = day
+
         
         #self.ds_mem[self._idx] = d
         
@@ -169,14 +170,81 @@ class ReplayBuffer_vi_e():
         r_lst = torch.tensor(np.vstack(self.rs_mem[idxs]),dtype=torch.int64)    
         s_prime_lst = torch.tensor(np.vstack(self.ps_mem[idxs]),dtype=torch.float32)
         vi_lst = torch.tensor(np.vstack(self.vi_mem[idxs]),dtype=torch.int32)
-        e_lst = torch.tensor(np.vstack(self.e_mem[idxs]),dtype=torch.int32)
+        day_lst = torch.tensor(np.vstack(self.day_mem[idxs]),dtype=torch.int32)
         
         experiences = s_lst, \
                       a_lst, \
                       r_lst, \
                       s_prime_lst, \
                       vi_lst,\
-                      e_lst, \
+                      day_lst, \
+          
+        return experiences
+
+    def __len__(self):
+        return self.size
+
+class ReplayBuffer_vi_market():
+    """
+    경험 재현 버퍼 list 버전
+    """
+    def __init__(self, 
+                 buffer_limit=10000, 
+                 batch_size=64):
+        self.ss_mem = np.empty(shape=(buffer_limit), dtype=np.ndarray)
+        self.as_mem = np.empty(shape=(buffer_limit), dtype=np.ndarray)
+        self.rs_mem = np.empty(shape=(buffer_limit), dtype=np.ndarray)
+        self.ps_mem = np.empty(shape=(buffer_limit), dtype=np.ndarray)
+        self.vi_mem = np.empty(shape=(buffer_limit), dtype=np.ndarray)
+        self.day_mem = np.empty(shape=(buffer_limit), dtype=np.ndarray)
+        self.time_mem = np.empty(shape=(buffer_limit), dtype=np.ndarray)
+
+        self.max_size = buffer_limit
+        self.batch_size = batch_size
+        self._idx = 0
+        self.size = 0
+    
+    def put(self, sample):
+        s, a, r, p, vi, day ,time = sample
+        self.ss_mem[self._idx] = s
+        self.as_mem[self._idx] = a
+        self.rs_mem[self._idx] = r
+        self.ps_mem[self._idx] = p
+        self.vi_mem[self._idx] = vi
+        self.day_mem[self._idx] = day
+        self.time_mem[self._idx] = time
+
+        
+        #self.ds_mem[self._idx] = d
+        
+        self._idx += 1
+        self._idx = self._idx % self.max_size
+
+        self.size += 1
+        self.size = min(self.size, self.max_size)
+
+    def sample(self, batch_size=None):
+        if batch_size == None:
+            batch_size = self.batch_size
+
+        idxs = np.random.choice(
+            self.size, batch_size, replace=False)
+
+        s_lst = torch.tensor(np.vstack(self.ss_mem[idxs]),dtype=torch.float32)
+        a_lst = torch.tensor(np.vstack(self.as_mem[idxs]),dtype=torch.int64)
+        r_lst = torch.tensor(np.vstack(self.rs_mem[idxs]),dtype=torch.int64)    
+        s_prime_lst = torch.tensor(np.vstack(self.ps_mem[idxs]),dtype=torch.float32)
+        vi_lst = torch.tensor(np.vstack(self.vi_mem[idxs]),dtype=torch.int32)
+        day_lst = torch.tensor(np.vstack(self.day_mem[idxs]),dtype=torch.int32)
+        time_lst = torch.tensor(np.vstack(self.time_mem[idxs]),dtype=torch.int32)
+        
+        experiences = s_lst, \
+                      a_lst, \
+                      r_lst, \
+                      s_prime_lst, \
+                      vi_lst,\
+                      day_lst, \
+                      time_lst, \
           
         return experiences
 

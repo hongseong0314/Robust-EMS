@@ -1,5 +1,5 @@
 import numpy as np
-from utills import cal_price
+import pickle
 
 class Environment():
     def __init__(self, feature,
@@ -89,9 +89,10 @@ class Environment_minc():
         self.winter_TOU = winter_TOU
         self.battery_max = battery_max
 
-        self.limit_c = 0
-        self.e = 0
-        self.update_limit(summer_TOU)
+        # self.limit_c = 0
+        # self.e = 0
+        # # self.update_limit(winter_TOU)
+        self.market_limit = pickle.load(open("market_sample.pkl", 'rb'))
 
     def cal_price(self, time, charge, day_charge, TOU):
         """
@@ -150,22 +151,23 @@ class Environment_minc():
         next_s = self.next_state(n_epi, time, battery, charge, day_charge, TOU)
         reward = self.cal_price(time, charge, day_charge, TOU)
 
-        if self.e < n_epi:
-            self.update_limit(TOU)
+        # if self.e < n_epi:
+        #     self.update_limit(TOU)
 
         violation = self.check_violation(next_s, charge, time)
         return next_s, reward, violation
 
 
-    def update_limit(self, TOU):
-        day_load = self.load_data[self.limit_c % self.day]
-        sd = np.log(day_load * TOU)
-        market_limit = [np.random.normal(20, np.abs(sd[i]), 1) for i in range(24)] 
-        market_limit = [40 - time if time >= 20 else time for time in market_limit]
-        self.limit_c += 1
+    # def update_limit(self, TOU):
+    #     # day_load = self.load_data[self.limit_c % self.day]
+    #     sd = np.log(TOU) # day_load
+    #     market_limit = [np.random.uniform(20-sd[i], 20, 1) for i in range(24)]
+    #     # market_limit = [40 - time if time >= 20 else time for time in market_limit]
+    #     self.limit_c += 1
 
-        self.market_limit = np.vstack(market_limit)
-        pass
+    #     self.market_limit = np.vstack(market_limit)
+        
+    #     pass
 
     def check_violation(self, next_state, charge, time):
         if next_state.ndim == 2:
@@ -181,5 +183,5 @@ class Environment_minc():
             #distbattery = battery + next_state[51] - next_state[50]
 
             # market 제한
-            charge > self.market_limit[time][0] 
+            #charge > self.market_limit[time][0] 
             return battery <= 0 #or next_state[0] > self.battery_max
