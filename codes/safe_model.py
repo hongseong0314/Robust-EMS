@@ -222,7 +222,7 @@ class REMS():
             next_states, rewards = self.T_hat.transition(states, actions, ob_time, ep, 
                                                             battery, t)
 
-            violations = self.env.check_violation(next_states, actions, ob_time)
+            violations = self.env.check_violation(next_states)
             
             for s,a,r,s_,vi, d in zip(states, actions, rewards, next_states, violations, ep):
                 buffer.put((s, a, r, s_, vi))
