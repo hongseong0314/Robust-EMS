@@ -110,7 +110,7 @@ class DQN():
         """
         online 신경망 행동
         """
-        action = self.training_strategy.select_action(self.online_model, state, battery, self.battery_max, self.env.market_limit[self.epochs_completed % self.end_day][time])
+        action = self.training_strategy.select_action(self.online_model, state, battery, self.battery_max, self.env.market_limit[self.epochs_completed % self.days][time])
         return action
     
     def update_network(self):
@@ -270,7 +270,7 @@ class DDQN():
         """
         online 신경망 행동
         """
-        action = self.training_strategy.select_action(self.online_model, state, battery, self.battery_max, self.env.market_limit[self.epochs_completed % self.end_day][time])
+        action = self.training_strategy.select_action(self.online_model, state, battery, self.battery_max, self.env.market_limit[self.epochs_completed % self.days][time])
         return action
     
     def update_network(self):
@@ -433,7 +433,7 @@ class DualingDDQN():
         """
         online 신경망 행동
         """
-        action = self.training_strategy.select_action(self.online_model, state, battery, self.battery_max, self.env.market_limit[self.epochs_completed % self.end_day][time])
+        action = self.training_strategy.select_action(self.online_model, state, battery, self.battery_max, self.env.market_limit[self.epochs_completed % self.days][time])
         return action
     
     def update_network(self, tau=None):
@@ -609,7 +609,7 @@ class PER():
         """
         online 신경망 행동
         """
-        action = self.training_strategy.select_action(self.online_model, state, battery, self.battery_max, self.env.market_limit[self.epochs_completed % self.end_day][time])
+        action = self.training_strategy.select_action(self.online_model, state, battery, self.battery_max, self.env.market_limit[self.epochs_completed % self.days][time])
         return action
     
     def update_network(self, tau=None):
@@ -778,7 +778,7 @@ class LRDQN():
         """
         online 신경망 행동
         """
-        action = self.training_strategy.select_action(self.online_model, state, battery, self.battery_max, self.env.market_limit[self.epochs_completed % self.end_day][time])      
+        action = self.training_strategy.select_action(self.online_model, state, battery, self.battery_max, self.env.market_limit[self.epochs_completed % self.days][time])      
         return action
     
     def update_network(self):
