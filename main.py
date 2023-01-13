@@ -33,8 +33,8 @@ def run():
             cfg.model.batch_size= batch
             cfg.model.training_strategy_fn = train_st
             if cfg.coder == 'REMS':
-                cfg.model.p=0.9
-                cfg.model.q=0.09
+                cfg.model.p=0.1
+                cfg.model.q=0.01
                 cfg.model.H=5
                 cfg.model.obs=1
             # 모델을 학습
