@@ -581,11 +581,11 @@ class PER():
         (s, a, r, s_prime, vi, day) = self.replay_buffer.sample(self.batch_size)
         time = np.argmax(s[:, 2:26], axis=1)
 
-        q_a = self.online_model(s_prime)
-        min_q_a = over_flow_battery_PER(self.batch_size, self.battery_max, s_prime, q_a, self.Tf, day, time, self.env.market_limit, self.days).min(1)[1]
+        q_a = self.online_model(s_prime).detach()
+        min_q_a = over_flow_battery(self.batch_size, self.battery_max, s_prime, q_a, self.Tf, day, time, self.env.market_limit, self.days).min(1)[1]
         
         q_sp = self.target_model(s_prime).detach()
-        min_q_prime = over_flow_battery_PER(self.batch_size, self.battery_max, s_prime, q_sp, self.Tf, day, time, self.env.market_limit, self.days)
+        min_q_prime = over_flow_battery(self.batch_size, self.battery_max, s_prime, q_sp, self.Tf, day, time, self.env.market_limit, self.days)
         Q_target = min_q_prime[np.arange(self.batch_size), min_q_a]
         Q_target = torch.tensor((Q_target)).resize(self.batch_size, 1)
         

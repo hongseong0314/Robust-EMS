@@ -78,7 +78,7 @@ def trainer(cfg):
         cfg.model.max_gradient_norm = float('inf')
         cfg.model.value_model_fn = lambda nS: DualingQnet(nS)
         cfg.model.value_optimizer_fn = lambda net, lr: optim.Adam(net.parameters(), lr=lr)
-        cfg.model.replay_buffer_fn = lambda : PrioritizedReplayBuffer(buffer_limit=15000, batch_size=cfg.model.batch_size)
+        cfg.model.replay_buffer_fn = lambda : PrioritizedReplayBuffer(buffer_limit=15000, batch_size=cfg.model.batch_size, rank_based=True)
         cfg.env = Environment_minc(cfg)
 
         agent = PER(cfg)

@@ -4,7 +4,7 @@ import torch
 
 class ReplayBuffer_list():
     """
-    경험 재현 버퍼 list 버전
+    버퍼 기본
     """
     def __init__(self, 
                  buffer_limit=10000, 
@@ -13,9 +13,6 @@ class ReplayBuffer_list():
         self.as_mem = np.empty(shape=(buffer_limit), dtype=np.ndarray)
         self.rs_mem = np.empty(shape=(buffer_limit), dtype=np.ndarray)
         self.ps_mem = np.empty(shape=(buffer_limit), dtype=np.ndarray)
-        #self.vi_mem = np.empty(shape=(buffer_limit), dtype=np.ndarray)
-        
-        #self.ds_mem = np.empty(shape=(buffer_limit), dtype=np.ndarray)
 
         self.max_size = buffer_limit
         self.batch_size = batch_size
@@ -23,13 +20,11 @@ class ReplayBuffer_list():
         self.size = 0
     
     def put(self, sample):
-        s, a, r, p, vi = sample
+        s, a, r, p = sample
         self.ss_mem[self._idx] = s
         self.as_mem[self._idx] = a
         self.rs_mem[self._idx] = r
         self.ps_mem[self._idx] = p
-        #self.vi_mem[self._idx] = vi
-        #self.ds_mem[self._idx] = d
         
         self._idx += 1
         self._idx = self._idx % self.max_size
@@ -48,7 +43,6 @@ class ReplayBuffer_list():
         a_lst = torch.tensor(np.vstack(self.as_mem[idxs]),dtype=torch.int64)
         r_lst = torch.tensor(np.vstack(self.rs_mem[idxs]),dtype=torch.int64)    
         s_prime_lst = torch.tensor(np.vstack(self.ps_mem[idxs]),dtype=torch.float32)
-        #vi_lst = torch.tensor(np.vstack(self.vi_mem[idxs]),dtype=torch.int32)
 
         experiences = s_lst, \
                       a_lst, \
@@ -63,7 +57,7 @@ class ReplayBuffer_list():
 
 class ReplayBuffer_vi():
     """
-    경험 재현 버퍼 list 버전
+    violation 추가
     """
     def __init__(self, 
                  buffer_limit=10000, 
@@ -73,8 +67,6 @@ class ReplayBuffer_vi():
         self.rs_mem = np.empty(shape=(buffer_limit), dtype=np.ndarray)
         self.ps_mem = np.empty(shape=(buffer_limit), dtype=np.ndarray)
         self.vi_mem = np.empty(shape=(buffer_limit), dtype=np.ndarray)
-        
-        #self.ds_mem = np.empty(shape=(buffer_limit), dtype=np.ndarray)
 
         self.max_size = buffer_limit
         self.batch_size = batch_size
@@ -88,7 +80,6 @@ class ReplayBuffer_vi():
         self.rs_mem[self._idx] = r
         self.ps_mem[self._idx] = p
         self.vi_mem[self._idx] = vi
-        #self.ds_mem[self._idx] = d
         
         self._idx += 1
         self._idx = self._idx % self.max_size
@@ -122,7 +113,7 @@ class ReplayBuffer_vi():
 
 class ReplayBuffer_vi_day():
     """
-    경험 재현 버퍼 list 버전
+    violation + day 추가
     """
     def __init__(self, 
                  buffer_limit=10000, 
@@ -148,9 +139,6 @@ class ReplayBuffer_vi_day():
         self.vi_mem[self._idx] = vi
         self.day_mem[self._idx] = day
 
-        
-        #self.ds_mem[self._idx] = d
-        
         self._idx += 1
         self._idx = self._idx % self.max_size
 
@@ -185,7 +173,7 @@ class ReplayBuffer_vi_day():
 
 class ReplayBuffer_vi_market():
     """
-    경험 재현 버퍼 list 버전
+    violation, day, hour 추가
     """
     def __init__(self, 
                  buffer_limit=10000, 
@@ -212,9 +200,6 @@ class ReplayBuffer_vi_market():
         self.vi_mem[self._idx] = vi
         self.day_mem[self._idx] = day
         self.time_mem[self._idx] = time
-
-        
-        #self.ds_mem[self._idx] = d
         
         self._idx += 1
         self._idx = self._idx % self.max_size
@@ -299,7 +284,6 @@ class PrioritizedReplayBuffer():
         return self.beta
 
     def sample(self, batch_size=None):
-        # beta 조절 후 0으로 채워진 행 삭제
         batch_size = self.batch_size if batch_size == None else batch_size
         self._update_beta()
         entries = self.memory[:self.n_entries]
@@ -313,7 +297,6 @@ class PrioritizedReplayBuffer():
 
         # 순위 확률화 
         probs = np.array(scaled_priorities/np.sum(scaled_priorities), dtype=np.float64)
-
         # 중요도 및 정규화 계산
         weights = (self.n_entries * probs)**-self.beta
         normalized_weights = weights/weights.max()
