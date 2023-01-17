@@ -7,6 +7,6 @@
 ## Cumulative Failure
 - Train = 2017-01-01 ~ 2017-01-30
 - Test = 2017-01-31 ~ 2017-04-30
-
+![다운로드](https://user-images.githubusercontent.com/79639187/212813389-200feb7b-49fe-42c0-a5b2-c3fed5721a28.png)
 ## Test Period EMS Status
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1sATG9i3L3rPnJGTI1ObhOENNJjhibTaF#scrollTo=zTINcb41GUtP)
