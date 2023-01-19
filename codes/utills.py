@@ -28,30 +28,6 @@ def over_flow_battery(batch_size, battery_max, s_prime, min_q, Tf, day, time, ma
     min_q *= con
     return torch.from_numpy(np.where(torch.isinf(min_q), float('inf'), min_q))
 
-def over_flow_battery_PER(batch_size, battery_max, s_prime, min_q, Tf, day, time, market_limit, days):
-    """
-    모델 output에 배터리 맥스 넘는지 체크
-    """
-    B_rate = 20
-    for i in range(batch_size):
-        # B_t+1 = B_t - L_T + G_t
-        B_t = s_prime[i][0].item()
-        L_t = s_prime[i][50].item()
-        G_t = s_prime[i][51+Tf].item()
-        
-        # 마켓 가격
-        M_max = int(market_limit[(day[i])%days][(time[i] + 1)%24][0]) + 1
-        min_q[i, M_max:] = np.float('inf')
-        for C in range(0, M_max, 1):
-            if -B_rate <= G_t - L_t + C <= B_rate: #|B_t+1 - B_t| <= B_rate
-                if 0 <= B_t + G_t - L_t + C <= battery_max:
-                    pass 
-                else:
-                    min_q[i, C] = np.float('inf')
-            else:
-                min_q[i, C] = np.float('inf')
-    return min_q
-
 def name_check(coder):
     """
     model 이름 체크

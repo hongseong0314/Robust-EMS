@@ -1,12 +1,9 @@
-from re import S
+import os
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
-from tqdm import tqdm
-import os
 
-from codes.utills import over_flow_battery, create_directory, over_flow_battery_PER
+from codes.utills import over_flow_battery, create_directory
 
 class Qnet(torch.nn.Module):
     def __init__(self, nS):
@@ -56,8 +53,9 @@ class DualingQnet(torch.nn.Module):
 
         a = self.output_layer(x)
         v = self.output_value(x).expand_as(a)
-
-        q = v + a - a.mean(-1, keepdim=True).expand_as(a)
+        q = v + a - a.mean(1, keepdim=True).expand_as(a)
+        if x.shape[0] == 1:
+            q = q.squeeze(0)
         return q
 
 class DQN():
@@ -185,10 +183,6 @@ class DQN():
         # freq 마다 target 신경망 업데이트 
         if self.epochs_completed % self.freq == 0 and self.epochs_completed != 0:
             self.update_network()
-
-        if self.epochs_completed >= 20000:
-            online_model_name = "DQN/{}.pth".format(self.epochs_completed)
-            torch.save(self.online_model.state_dict(), online_model_name)
     
     def step_run(self):
         state = self.env.initialize_state(self.start_day)
@@ -345,10 +339,6 @@ class DDQN():
         # freq 마다 target 신경망 업데이트 
         if self.epochs_completed % self.freq == 0 and self.epochs_completed != 0:
             self.update_network()
-
-        if self.epochs_completed >= 20000:
-            online_model_name = "DDQN/{}.pth".format(self.epochs_completed)
-            torch.save(self.online_model.state_dict(), online_model_name)
     
     def step_run(self):
         state = self.env.initialize_state(self.start_day)
@@ -512,10 +502,6 @@ class DualingDDQN():
         # freq 마다 target 신경망 업데이트 
         if self.epochs_completed % self.freq == 0 and self.epochs_completed != 0:
             self.update_network()
-
-        if self.epochs_completed >= 20000:
-            online_model_name = "DualingDDQN/{}.pth".format(self.epochs_completed)
-            torch.save(self.online_model.state_dict(), online_model_name)
     
     def step_run(self):
         state = self.env.initialize_state(self.start_day)
@@ -579,31 +565,30 @@ class PER():
         """
         idxs, weights, \
         (s, a, r, s_prime, vi, day) = self.replay_buffer.sample(self.batch_size)
-        time = np.argmax(s[:, 2:26], axis=1)
-
+        times = np.argmax(s[:, 2:26], axis=1)
         q_a = self.online_model(s_prime).detach()
-        min_q_a = over_flow_battery(self.batch_size, self.battery_max, s_prime, q_a, self.Tf, day, time, self.env.market_limit, self.days).min(1)[1]
-        
+        min_q_a = over_flow_battery(self.batch_size, self.battery_max, s_prime, q_a, self.Tf, day, times, self.env.market_limit, self.days).min(1)[1]
         q_sp = self.target_model(s_prime).detach()
-        min_q_prime = over_flow_battery(self.batch_size, self.battery_max, s_prime, q_sp, self.Tf, day, time, self.env.market_limit, self.days)
+        min_q_prime = over_flow_battery(self.batch_size, self.battery_max, s_prime, q_sp, self.Tf, day, times, self.env.market_limit, self.days)
         Q_target = min_q_prime[np.arange(self.batch_size), min_q_a]
         Q_target = torch.tensor((Q_target)).resize(self.batch_size, 1)
+        inf_idx = ~torch.isinf(torch.tensor(Q_target))
         
-        # r + discount * max(q)
-        target = r + self.gamma * Q_target
-
         q_a = self.online_model(s).gather(1,a)
 
-        td_error = q_a - target
-        loss = (weights * td_error).pow(2).mul(0.5).mean()
+        # r + discount * max(q)
+        target = r[inf_idx] + self.gamma * Q_target[inf_idx]
+ 
+        td_error = q_a[inf_idx] - target
+        loss = (weights[inf_idx] * td_error).pow(2).mul(0.5).mean()
         self.value_optimizer.zero_grad()
         loss.backward()
-        torch.nn.utils.clip_grad_norm_(self.online_model.parameters(), 
+        torch.nn.utils.clip_grad_norm_(self.online_model.parameters(),
                                        self.max_gradient_norm)
         self.value_optimizer.step()
 
-        priorities = np.abs(loss.detach().cpu().numpy())
-        self.replay_buffer.update(idxs, priorities)
+        priorities = np.abs(td_error.detach().cpu().numpy())
+        self.replay_buffer.update(idxs[inf_idx], priorities)
         
     def interaction_step(self, state, battery, time):
         """
@@ -704,7 +689,7 @@ class PER():
             if battery > self.battery_max: battery = self.battery_max
             
             # online 신경망 행동
-            action = self.interaction_step(torch.from_numpy(state).float(), battery, self.time)
+            action = self.interaction_step(torch.from_numpy(state).float()[np.newaxis, ...], battery, self.time)
             
             # 하루 행동 및 배터리 추가
             self.day_action.append(action)
@@ -856,10 +841,6 @@ class LRDQN():
         # freq 마다 target 신경망 업데이트 
         if self.epochs_completed % self.freq == 0 and self.epochs_completed != 0:
             self.update_network()
-
-        if self.epochs_completed >= 20000:
-            online_model_name = "LRDQN/{}.pth".format(self.epochs_completed)
-            torch.save(self.online_model.state_dict(), online_model_name)
     
     def step_run(self):
         state = self.env.initialize_state(self.start_day)

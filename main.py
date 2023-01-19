@@ -18,7 +18,7 @@ SEEDS = [12] # 12, 34, 53, 44, 34, 53
 def run():
     st_list = [egl] # eg
     batch_list = [32]
-    model_name = ["REMS"] # "DQN", "PER", "DDQN", "DualingDDQN", "REMS", "LRDQN"
+    model_name = ["PER"] # "DQN", "PER", "DDQN", "DualingDDQN", "REMS", "LRDQN"
  
     for seed in SEEDS:
         # hyper search 
