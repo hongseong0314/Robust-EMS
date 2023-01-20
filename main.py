@@ -6,7 +6,7 @@ from codes.strategy import EGreedyStrategy, EGreedyLinearStrategy
 from codes.trainer import trainer
 from codes.utills import name_check
 warnings.filterwarnings('ignore')
-# os.environ['KMP_DUPLICATE_LIB_OK']='True'
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 eg = lambda : EGreedyStrategy(epsilon=0.001)
 
