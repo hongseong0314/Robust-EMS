@@ -155,13 +155,8 @@ class REMS():
         elif self.epochs_completed > self.days and self.epochs_completed % 1000 == 0:
             runing_bar.set_postfix(cost=sum(self.cost_history[self.epochs_completed-self.days:self.epochs_completed]))
 
-        # 에피소드마다 target 업데이트
         if self.epochs_completed != 0:
             self.update_network()
-        
-        if self.epochs_completed >= 20000:
-            online_model_name = "M/{}.pth".format(self.epochs_completed)
-            torch.save(self.online_model.state_dict(), online_model_name)
     
     def step_run(self):
         state = self.env.initialize_state(self.start_day)
@@ -217,7 +212,7 @@ class REMS():
             battery = np.clip(battery, a_min=None, a_max=self.battery_max)
         
             with torch.no_grad():
-                actions = self.interaction_step(torch.from_numpy(states).float(), battery, ob_time, ep, roll=True) # roll=True
+                actions = self.interaction_step(torch.from_numpy(states).float(), battery, ob_time, ep, roll=True) 
             
             next_states, rewards = self.T_hat.transition(states, actions, ob_time, ep, 
                                                             battery, t)
@@ -244,7 +239,6 @@ class REMS():
         return buffer
     
     def update_models(self, steps=10):
-        # buffer_reward = np.random.choice(self.replay_buffer.rs_mem[:self.replay_buffer.size], size=self.replay_buffer.size)
         buffer_reward = self.replay_buffer.rs_mem[:self.replay_buffer.size]
         r_min = buffer_reward.min()
         r_max = buffer_reward.max()

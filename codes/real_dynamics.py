@@ -31,7 +31,7 @@ class T_hat():
             s_[51] = self.generation_data[(e)%self.days][(time+1)%24]
         
         if self.obs < iter:
-            sd = (1.148)**(iter)
+            sd = (1.148)**(iter) # noise
             s_[50] = np.clip(np.int(np.round(np.random.normal(s_[50], sd, 1))), 0, None)
             s_[51] = np.clip(np.int(np.round(np.random.normal(s_[51], sd, 1))), 0, None)
         return s_

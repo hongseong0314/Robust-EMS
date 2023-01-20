@@ -30,7 +30,6 @@ class EGreedyStrategy():
         self.exploratory_action_taken = None
 
     def select_action(self, model, state, battery, battery_max, market_limit, roll=False):
-        #self.exploratory_action_taken = False
         with torch.no_grad():
             q_values = model(state).cpu().detach()
 
@@ -39,8 +38,8 @@ class EGreedyStrategy():
             if battery + i>= 0 and battery + i <= battery_max :
                 q_list.append(q_values[i].item())
                 idx.append(i)
-            else: q_list.append(np.float('inf')) #np.float('inf')
-        # 입실론 그리디??탐색 
+            else: q_list.append(np.float('inf')) 
+        
         if len(idx) == 0:
             action = 0
 
@@ -50,7 +49,6 @@ class EGreedyStrategy():
             else: 
                 action = np.random.choice(idx)
 
-        #self.exploratory_action_taken = action != np.argmax(q_values)
         return action
 
 class EGreedyLinearStrategy():
@@ -73,7 +71,6 @@ class EGreedyLinearStrategy():
         return epsilon
 
     def select_action(self, model, state, battery, battery_max, market_limit, roll=False):
-        #self.exploratory_action_taken = False
         with torch.no_grad():
             q_values = model(state).cpu().detach()
 
@@ -84,7 +81,6 @@ class EGreedyLinearStrategy():
                 idx.append(i)
             else: q_list.append(np.float('inf'))
         
-        # print(idx)
         if len(idx) == 0:
             action = 0
         else:
@@ -92,6 +88,7 @@ class EGreedyLinearStrategy():
                 action = q_list.index(min(q_list))
             else: 
                 action = np.random.choice(idx)
+        
         if roll == False:
             self.epsilon = self._epsilon_update()
         return action
@@ -116,7 +113,6 @@ class EGreedyExpStrategy():
         return self.epsilon
 
     def select_action(self, model, state, battery, battery_max, market_limit):
-        #self.exploratory_action_taken = False
         with torch.no_grad():
             q_values = model(state).cpu().detach()
 
@@ -133,7 +129,6 @@ class EGreedyExpStrategy():
             action = np.random.choice(idx)
 
         self._epsilon_update()
-        #self.exploratory_action_taken = action != np.argmax(q_values)
         return action
 
 class SoftMaxStrategy():
@@ -160,7 +155,6 @@ class SoftMaxStrategy():
         return temp
 
     def select_action(self, model, state, battery, battery_max, market_limit):
-        #self.exploratory_action_taken = False
         temp = self._update_temp()
 
         with torch.no_grad():
@@ -179,5 +173,4 @@ class SoftMaxStrategy():
         assert np.isclose(probs.sum(), 1.0)
 
         action = np.random.choice(np.arange(len(probs)), size=1, p=probs)[0]
-        #self.exploratory_action_taken = action != np.argmax(q_values)
         return action

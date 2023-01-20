@@ -180,7 +180,6 @@ class DQN():
             for _ in range(20):
                 self.optimize_model()
 
-        # freq 마다 target 신경망 업데이트 
         if self.epochs_completed % self.freq == 0 and self.epochs_completed != 0:
             self.update_network()
     
@@ -335,8 +334,7 @@ class DDQN():
         if len(self.replay_buffer) > self.start_size:
             for _ in range(20):
                 self.optimize_model()
-
-        # freq 마다 target 신경망 업데이트 
+ 
         if self.epochs_completed % self.freq == 0 and self.epochs_completed != 0:
             self.update_network()
     
@@ -499,7 +497,6 @@ class DualingDDQN():
             for _ in range(20):
                 self.optimize_model()
 
-        # freq 마다 target 신경망 업데이트 
         if self.epochs_completed % self.freq == 0 and self.epochs_completed != 0:
             self.update_network()
     
@@ -669,18 +666,12 @@ class PER():
         elif self.epochs_completed > self.days and self.epochs_completed % 1000 == 0:
             runing_bar.set_postfi(cost=sum(self.cost_history[self.epochs_completed-self.days:self.epochs_completed]))
         
-        # 버퍼가 start_size 이상이면 online 모델 업데이트
         if len(self.replay_buffer) > self.start_size:
             for _ in range(20):
                 self.optimize_model()
 
-        # freq 마다 target 신경망 업데이트 
         if self.epochs_completed % self.freq == 0 and self.epochs_completed != 0:
             self.update_network()
-
-        if self.epochs_completed >= 20000:
-            online_model_name = "PER/{}.pth".format(self.epochs_completed)
-            torch.save(self.online_model.state_dict(), online_model_name)
     
     def step_run(self):
         state = self.env.initialize_state(self.start_day)
@@ -833,12 +824,10 @@ class LRDQN():
         elif self.epochs_completed > self.days and self.epochs_completed % 1000 == 0:
             runing_bar.set_postfix(cost=sum(self.cost_history[self.epochs_completed-self.days:self.epochs_completed]))
         
-        # 버퍼가 start_size 이상이면 online 모델 업데이트
         if len(self.replay_buffer) > self.start_size:
             for _ in range(20):
                 self.optimize_model()
 
-        # freq 마다 target 신경망 업데이트 
         if self.epochs_completed % self.freq == 0 and self.epochs_completed != 0:
             self.update_network()
     

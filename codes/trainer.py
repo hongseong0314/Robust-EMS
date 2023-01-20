@@ -26,7 +26,7 @@ def trainer(cfg):
         if cfg.model.violation:
             violation_list = agent.violation_list
 
-        #model save
+        # model save
         create_directory("weight")                
         online_model_name = "weight/q_{}_{}_{}_{}.pth".format(agent.__class__.__name__, 
                                                                     cfg.model.training_strategy_fn().__class__.__name__, 
@@ -91,7 +91,7 @@ def trainer(cfg):
         if cfg.model.violation:
             violation_list = agent.violation_list
 
-        #model save
+        # model save
         create_directory("weight")                
         online_model_name = "weight/q_{}_{}_{}_{}.pth".format(agent.__class__.__name__, 
                                                                     cfg.model.training_strategy_fn().__class__.__name__, 
@@ -136,7 +136,7 @@ def trainer(cfg):
         if cfg.model.violation:
             violation_list = agent.violation_list
 
-        #model save
+        # model save
         create_directory("weight")                
         online_model_name = "weight/q_{}_{}_{}_{}.pth".format(agent.__class__.__name__, 
                                                                     cfg.model.training_strategy_fn().__class__.__name__, 
@@ -181,7 +181,7 @@ def trainer(cfg):
         if cfg.model.violation:
             violation_list = agent.violation_list
 
-        #model save
+        # model save
         create_directory("weight")                
         online_model_name = "weight/q_{}_{}_{}_{}_{}_{}_{}.pth".format(agent.__class__.__name__, 
                                                                     cfg.model.training_strategy_fn().__class__.__name__, 
